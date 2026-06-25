@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bachcompressandpack"
-version = "1.0.0"
+version = "1.0.1"
 description = "批量压缩打包：按每包 ≤100MB 切分压缩，支持 CLI + 图形界面，可选上传蓝奏云（Windows/Linux/macOS）"
 readme = "README.md"
 requires-python = ">=3.9"

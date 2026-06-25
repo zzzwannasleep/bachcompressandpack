@@ -34,7 +34,7 @@ from typing import Sequence
 from . import core
 
 PROG = "bachpack"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 class StreamEventSink:
