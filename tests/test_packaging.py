@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 from pyapp.core import (  # noqa: E402
     HARD_LIMIT_BYTES,
     PACKAGE_MARGIN_BYTES,
+    SEVEN_ZIP_COMMAND_NAMES,
     FileEntry,
     build_initial_groups,
     detect_7z_executable,
@@ -78,9 +79,11 @@ class PackagingTests(unittest.TestCase):
         self.assertFalse(has_required_lanzou_cookie({"ylogin": "1"}))
 
     def test_detect_7z_executable_prefers_bundled_tool(self) -> None:
+        # 用当前平台对应的可执行名（Windows: 7z.exe，Linux/macOS: 7zz）
+        bundled_name = SEVEN_ZIP_COMMAND_NAMES[0]
         with TemporaryDirectory() as temp_dir:
             runtime_dir = Path(temp_dir)
-            tool_path = runtime_dir / "tools" / "7zip" / "7z.exe"
+            tool_path = runtime_dir / "tools" / "7zip" / bundled_name
             tool_path.parent.mkdir(parents=True, exist_ok=True)
             tool_path.write_text("", encoding="utf-8")
 
