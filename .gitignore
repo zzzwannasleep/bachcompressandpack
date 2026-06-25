@@ -1,0 +1,13 @@
+.python_deps/
+__pycache__/
+build/
+dist/
+*.spec
+# CLI 打包规格是手写的、CI 需要，保留
+!batch-packager-cli.spec
+
+# 构建/分析产物
+*.log
+
+# 本地编辑器/工具配置
+.claude/

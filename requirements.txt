@@ -1,0 +1,8 @@
+# 界面：PyQt6 + Fluent 设计风格
+PyQt6==6.11.0
+PyQt6-Fluent-Widgets==1.11.2
+# 内置登录：系统 WebView2（不打包 Chromium）
+pywebview==6.2.1
+# 蓝奏云上传与 Cookie 获取
+lanzou-api==2.6.10
+browser-cookie3==0.20.1

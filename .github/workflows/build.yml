@@ -1,0 +1,86 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run tests (纯标准库，无需安装依赖)
+        run: python -m unittest discover -s tests -v
+
+  build-cli:
+    name: build CLI (${{ matrix.os }})
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: bachpack-linux-x64
+            binary: bachpack
+          - os: windows-latest
+            artifact: bachpack-windows-x64
+            binary: bachpack.exe
+          - os: macos-latest
+            artifact: bachpack-macos-arm64
+            binary: bachpack
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build deps
+        run: |
+          python -m pip install --upgrade pip pyinstaller
+          python -m pip install requests requests-toolbelt "lanzou-api==2.6.10" "browser-cookie3==0.20.1"
+      - name: Build CLI
+        run: python -m PyInstaller --noconfirm --clean --distpath dist --workpath build batch-packager-cli.spec
+      - name: Smoke test
+        run: dist/${{ matrix.binary }} --version
+        shell: bash
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.binary }}
+
+  release:
+    name: release
+    needs: build-cli
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Rename binaries per platform
+        run: |
+          mkdir -p release
+          cp artifacts/bachpack-linux-x64/bachpack       release/bachpack-linux-x64
+          cp artifacts/bachpack-macos-arm64/bachpack     release/bachpack-macos-arm64
+          cp artifacts/bachpack-windows-x64/bachpack.exe release/bachpack-windows-x64.exe
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
