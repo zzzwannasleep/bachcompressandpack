@@ -64,21 +64,68 @@ jobs:
           name: ${{ matrix.artifact }}
           path: dist/${{ matrix.binary }}
 
+  build-gui:
+    name: build portable GUI (${{ matrix.os }})
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: batch-packager-portable-linux-x64
+          - os: windows-latest
+            artifact: batch-packager-portable-windows-x64
+          - os: macos-latest
+            artifact: batch-packager-portable-macos-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Qt system libraries (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libegl1 libxkbcommon0 libdbus-1-3 libglib2.0-0 zip
+      - name: Install build deps
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip pyinstaller
+          python -m pip install "PyQt6==6.11.0" "PyQt6-Fluent-Widgets==1.11.2" requests requests-toolbelt "lanzou-api==2.6.10" "browser-cookie3==0.20.1"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            python -m pip install "pywebview==6.2.1" pythonnet
+          fi
+      - name: Build portable GUI (onedir)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m PyInstaller --noconfirm --clean --distpath dist --workpath build batch-packager-gui.spec
+      - name: Package portable folder into a zip
+        shell: bash
+        run: python -c "import shutil; shutil.make_archive('${{ matrix.artifact }}', 'zip', 'dist', 'batch-packager')"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}.zip
+
   release:
     name: release
-    needs: build-cli
+    needs: [build-cli, build-gui]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
-      - name: Rename binaries per platform
+      - name: Stage release files (3 CLI + 3 便携包 = 6)
         run: |
           mkdir -p release
           cp artifacts/bachpack-linux-x64/bachpack       release/bachpack-linux-x64
           cp artifacts/bachpack-macos-arm64/bachpack     release/bachpack-macos-arm64
           cp artifacts/bachpack-windows-x64/bachpack.exe release/bachpack-windows-x64.exe
+          cp artifacts/*portable*/*.zip release/
+          ls -la release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

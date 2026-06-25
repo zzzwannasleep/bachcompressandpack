@@ -115,15 +115,21 @@ python -m pip install --target .python_deps -r requirements.txt
 # CLI 单文件（跨平台）
 bash scripts/build-cli.sh                                          # Linux / macOS → dist/bachpack
 powershell -ExecutionPolicy Bypass -File .\scripts\build-cli.ps1   # Windows → dist/bachpack.exe
+
+# GUI 便携版（onedir 文件夹，跨平台）
+bash scripts/build-portable.sh                                     # Linux / macOS → dist/batch-packager/
+powershell -ExecutionPolicy Bypass -File .\scripts\build-portable.ps1  # Windows（可随包附带 7z / rar）
+
+# GUI 单文件 exe（Windows）
+powershell -ExecutionPolicy Bypass -File .\scripts\build-exe.ps1
 ```
 
-```powershell
-# GUI（Windows）
-powershell -ExecutionPolicy Bypass -File .\scripts\build-exe.ps1       # 单文件 exe
-powershell -ExecutionPolicy Bypass -File .\scripts\build-portable.ps1  # 便携版 onedir（可随包附带 7z / rar）
-```
+GitHub Actions（`.github/workflows/build.yml`）会在 Ubuntu / Windows / macOS 上跑测试，
+并为每个平台同时构建 **CLI 单文件** 和 **GUI 便携包**。打 `v*` tag 时自动发布
+**6 个产物**（3 平台 × {CLI, 便携包}）到 Release：
 
-GitHub Actions（`.github/workflows/build.yml`）会在 Ubuntu / Windows / macOS 上跑测试并构建 CLI；打 `v*` tag 时自动发布三平台预编译产物到 Release。
+- `bachpack-linux-x64` / `bachpack-macos-arm64` / `bachpack-windows-x64.exe`（CLI）
+- `batch-packager-portable-{linux-x64,macos-arm64,windows-x64}.zip`（GUI 便携包）
 
 ## 测试
 
